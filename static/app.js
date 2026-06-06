@@ -26,8 +26,8 @@ function escHtml(str) {
     var el = document.getElementById('global-toast') || document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
-    el.classList.toggle('bg-rose-600', !!isError);
-    el.classList.toggle('bg-gray-900', !isError);
+    el.style.background = isError ? 'rgba(185,28,28,0.9)' : 'rgba(13,24,41,0.95)';
+    el.style.borderColor = isError ? 'rgba(248,113,113,0.4)' : 'rgba(59,130,246,0.3)';
     el.classList.remove('opacity-0');
     el.classList.add('opacity-100');
     clearTimeout(el._toastTimer);
@@ -86,11 +86,10 @@ function escHtml(str) {
     activeMealType = meal;
     mealPills.forEach(function (pill) {
       var isActive = pill.dataset.meal === meal;
-      pill.classList.toggle('border-brand-500', isActive);
-      pill.classList.toggle('text-brand-700',   isActive);
-      pill.classList.toggle('bg-brand-50',       isActive);
-      pill.classList.toggle('border-gray-200',  !isActive);
-      pill.classList.toggle('text-gray-500',    !isActive);
+      pill.classList.toggle('border-blue-500',  isActive);
+      pill.classList.toggle('text-blue-300',    isActive);
+      pill.classList.toggle('border-slate-700', !isActive);
+      pill.classList.toggle('text-slate-400',   !isActive);
     });
   }
 
@@ -175,7 +174,7 @@ function escHtml(str) {
     }
     if (results.length === 0) {
       searchResults.innerHTML =
-        '<div class="text-center py-8 text-gray-400 text-sm">' +
+        '<div class="text-center py-8 text-slate-500 text-sm">' +
         '<p class="text-2xl mb-2">🔍</p>' +
         '<p>No results found. Try a different search term.</p></div>';
       return;
@@ -185,18 +184,19 @@ function escHtml(str) {
       var card = document.createElement('button');
       card.type = 'button';
       card.className = [
-        'w-full text-left bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3.5',
-        'hover:border-brand-400 hover:shadow-md active:bg-brand-50',
-        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-brand-400',
+        'w-full text-left rounded-xl px-4 py-3.5',
+        'hover:border-blue-500/60 active:opacity-80',
+        'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/50',
       ].join(' ');
+      card.style.cssText = 'background:#0d1829; border:1px solid rgba(255,255,255,0.07);';
       card.innerHTML =
-        '<p class="font-medium text-gray-800 text-sm leading-snug">' + escHtml(food.name) + '</p>' +
-        '<div class="flex gap-3 mt-1.5 text-xs text-gray-500 flex-wrap">' +
-        '<span class="text-brand-600 font-semibold">' + food.kcal + ' kcal</span>' +
+        '<p class="font-medium text-slate-200 text-sm leading-snug">' + escHtml(food.name) + '</p>' +
+        '<div class="flex gap-3 mt-1.5 text-xs text-slate-500 flex-wrap">' +
+        '<span class="text-blue-400 font-semibold">' + food.kcal + ' kcal</span>' +
         '<span>P: ' + food.protein + 'g</span>' +
         '<span>C: ' + food.carbs + 'g</span>' +
         '<span>F: ' + food.fat + 'g</span>' +
-        '<span class="text-gray-300">per ' + (food.unit_label || '100g') + '</span></div>';
+        '<span class="text-slate-600">per ' + (food.unit_label || '100g') + '</span></div>';
       card.addEventListener('click', function () { selectFood(food); });
       searchResults.appendChild(card);
     });
@@ -204,7 +204,7 @@ function escHtml(str) {
 
   function renderError(msg) {
     searchResults.innerHTML =
-      '<div class="bg-rose-50 border border-rose-100 text-rose-600 text-sm rounded-xl px-4 py-3">' +
+      '<div class="text-rose-400 text-sm rounded-xl px-4 py-3" style="background:rgba(251,113,133,0.08);border:1px solid rgba(251,113,133,0.2)">' +
       escHtml(msg) + '</div>';
   }
 
@@ -212,12 +212,13 @@ function escHtml(str) {
     if (!ocrResult || !ocrResultOutput) return;
     ocrResultOutput.innerHTML = '';
     var title = document.createElement('p');
-    title.className = 'text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2';
+    title.className = 'text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2';
     title.textContent = 'Recognized text';
     ocrResultOutput.appendChild(title);
 
     var textBlock = document.createElement('pre');
-    textBlock.className = 'whitespace-pre-wrap text-xs leading-5 bg-gray-50 rounded-xl p-3 border border-gray-100 text-gray-700';
+    textBlock.className = 'whitespace-pre-wrap text-xs leading-5 rounded-xl p-3 text-slate-300';
+    textBlock.style.cssText = 'background:#081220; border:1px solid rgba(255,255,255,0.07)';
     textBlock.textContent = rawText.trim() || 'No text detected.';
     ocrResultOutput.appendChild(textBlock);
 
@@ -225,13 +226,13 @@ function escHtml(str) {
       var parsedBlock = document.createElement('div');
       parsedBlock.className = 'mt-3 space-y-1';
       parsedBlock.innerHTML =
-        '<p class="font-semibold text-gray-800">Parsed product</p>' +
-        '<p class="text-sm text-gray-600">' + escHtml(parsed.food_name) + '</p>' +
-        '<div class="flex flex-wrap gap-2 text-xs text-gray-500">' +
-        '<span class="px-2 py-1 bg-gray-100 rounded-full">' + parsed.calories_per_100g + ' kcal/100g</span>' +
-        '<span class="px-2 py-1 bg-gray-100 rounded-full">P ' + parsed.protein_per_100g + 'g</span>' +
-        '<span class="px-2 py-1 bg-gray-100 rounded-full">C ' + parsed.carbs_per_100g + 'g</span>' +
-        '<span class="px-2 py-1 bg-gray-100 rounded-full">F ' + parsed.fat_per_100g + 'g</span>' +
+        '<p class="font-semibold text-slate-100">Parsed product</p>' +
+        '<p class="text-sm text-slate-400">' + escHtml(parsed.food_name) + '</p>' +
+        '<div class="flex flex-wrap gap-2 text-xs text-slate-400">' +
+        '<span class="px-2 py-1 rounded-full" style="background:#0d2040">' + parsed.calories_per_100g + ' kcal/100g</span>' +
+        '<span class="px-2 py-1 rounded-full" style="background:#0d2040">P ' + parsed.protein_per_100g + 'g</span>' +
+        '<span class="px-2 py-1 rounded-full" style="background:#0d2040">C ' + parsed.carbs_per_100g + 'g</span>' +
+        '<span class="px-2 py-1 rounded-full" style="background:#0d2040">F ' + parsed.fat_per_100g + 'g</span>' +
         '</div>';
       ocrResultOutput.appendChild(parsedBlock);
     }
@@ -241,7 +242,8 @@ function escHtml(str) {
 
     var useBtn = document.createElement('button');
     useBtn.type = 'button';
-    useBtn.className = 'px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700';
+    useBtn.className = 'px-4 py-2 rounded-xl text-white text-sm font-semibold';
+    useBtn.style.cssText = 'background:linear-gradient(135deg,#1d4ed8,#3b82f6)';
     useBtn.textContent = 'Use scanned product';
     useBtn.addEventListener('click', function () {
       if (parsed && parsed.food_name) {
@@ -260,7 +262,8 @@ function escHtml(str) {
     if (parsed && parsed.food_name) {
       var searchBtn = document.createElement('button');
       searchBtn.type = 'button';
-      searchBtn.className = 'px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-sm hover:bg-gray-50';
+      searchBtn.className = 'px-4 py-2 rounded-xl text-slate-300 text-sm hover:text-white transition-colors';
+      searchBtn.style.cssText = 'background:#0d1829; border:1px solid rgba(255,255,255,0.1)';
       searchBtn.textContent = 'Search product name';
       searchBtn.addEventListener('click', function () {
         searchInput.value = parsed.food_name;
@@ -411,16 +414,16 @@ function escHtml(str) {
       li.className = 'px-5 py-3.5 flex items-start justify-between gap-3';
       li.innerHTML =
         '<div class="flex-1 min-w-0">' +
-          '<p class="font-medium text-gray-800 truncate text-sm">' + escHtml(item.food.name) + '</p>' +
-          '<p class="text-xs text-gray-400 mt-0.5">' + item.grams + 'g · ' + getMealLabel(item.meal_type) + '</p>' +
-          '<div class="flex gap-3 mt-1 text-xs text-gray-500">' +
-            '<span class="text-brand-600 font-semibold">' + Math.round(item.calories) + ' kcal</span>' +
+          '<p class="font-medium text-slate-200 truncate text-sm">' + escHtml(item.food.name) + '</p>' +
+          '<p class="text-xs text-slate-500 mt-0.5">' + item.grams + 'g · ' + getMealLabel(item.meal_type) + '</p>' +
+          '<div class="flex gap-3 mt-1 text-xs text-slate-500">' +
+            '<span class="text-blue-400 font-semibold">' + Math.round(item.calories) + ' kcal</span>' +
             '<span>P: ' + item.protein + 'g</span>' +
             '<span>C: ' + item.carbs + 'g</span>' +
             '<span>F: ' + item.fat + 'g</span>' +
           '</div>' +
         '</div>' +
-        '<button class="flex-shrink-0 p-2 text-gray-300 hover:text-rose-500 transition-colors rounded-lg hover:bg-rose-50" ' +
+        '<button class="flex-shrink-0 p-2 text-slate-600 hover:text-rose-400 transition-colors rounded-lg hover:bg-rose-500/10" ' +
                 'aria-label="Remove" data-cart-idx="' + idx + '">' +
           '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" ' +
                'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -523,8 +526,8 @@ function escHtml(str) {
       isListening = false;
       micIcon.classList.remove('hidden');
       micRecording.classList.add('hidden');
-      voiceBtn.classList.remove('border-rose-400', 'text-rose-500');
-      voiceBtn.classList.add('border-gray-200', 'text-gray-400');
+      voiceBtn.classList.remove('border-rose-400', 'text-rose-400');
+      voiceBtn.classList.add('text-slate-500');
     });
 
     recognition.addEventListener('result', function (e) {
@@ -573,21 +576,21 @@ function escHtml(str) {
     if (!suggestedContent) return;
     suggestedContent.innerHTML =
       '<div class="grid grid-cols-2 gap-3">' +
-        '<div class="bg-brand-50 rounded-xl p-3 text-center">' +
-          '<p class="text-2xl font-bold text-brand-700">' + goals.calories + '</p>' +
-          '<p class="text-xs text-gray-500 mt-0.5">Calories</p>' +
+        '<div class="rounded-xl p-3 text-center" style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.18)">' +
+          '<p class="text-2xl font-bold text-blue-400">' + goals.calories + '</p>' +
+          '<p class="text-xs text-slate-500 mt-0.5">Calories</p>' +
         '</div>' +
-        '<div class="bg-blue-50 rounded-xl p-3 text-center">' +
-          '<p class="text-2xl font-bold text-blue-700">' + goals.protein + 'g</p>' +
-          '<p class="text-xs text-gray-500 mt-0.5">Protein</p>' +
+        '<div class="rounded-xl p-3 text-center" style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.12)">' +
+          '<p class="text-2xl font-bold text-blue-300">' + goals.protein + 'g</p>' +
+          '<p class="text-xs text-slate-500 mt-0.5">Protein</p>' +
         '</div>' +
-        '<div class="bg-amber-50 rounded-xl p-3 text-center">' +
-          '<p class="text-2xl font-bold text-amber-700">' + goals.carbs + 'g</p>' +
-          '<p class="text-xs text-gray-500 mt-0.5">Carbs</p>' +
+        '<div class="rounded-xl p-3 text-center" style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.15)">' +
+          '<p class="text-2xl font-bold text-amber-400">' + goals.carbs + 'g</p>' +
+          '<p class="text-xs text-slate-500 mt-0.5">Carbs</p>' +
         '</div>' +
-        '<div class="bg-rose-50 rounded-xl p-3 text-center">' +
-          '<p class="text-2xl font-bold text-rose-600">' + goals.fat + 'g</p>' +
-          '<p class="text-xs text-gray-500 mt-0.5">Fat</p>' +
+        '<div class="rounded-xl p-3 text-center" style="background:rgba(251,113,133,0.08);border:1px solid rgba(251,113,133,0.15)">' +
+          '<p class="text-2xl font-bold text-rose-400">' + goals.fat + 'g</p>' +
+          '<p class="text-xs text-slate-500 mt-0.5">Fat</p>' +
         '</div>' +
       '</div>';
 
@@ -732,14 +735,14 @@ function escHtml(str) {
       html +=
         '<li class="flex items-center gap-3">' +
           '<div class="w-16 text-right flex-shrink-0">' +
-            '<p class="text-xs text-gray-400">' + escHtml(entry.date) + '</p>' +
+            '<p class="text-xs text-slate-500">' + escHtml(entry.date) + '</p>' +
           '</div>' +
           '<div class="flex-1">' +
             '<div class="relative h-6 flex items-center">' +
-              '<div class="h-4 rounded-full bg-brand-100" style="width:' + barPct + '%"></div>' +
-              '<span class="absolute left-2 text-xs font-semibold text-brand-700">' + entry.weight_kg + 'kg</span>' +
+              '<div class="h-4 rounded-full" style="width:' + barPct + '%;background:rgba(59,130,246,0.25)"></div>' +
+              '<span class="absolute left-2 text-xs font-semibold text-blue-400">' + entry.weight_kg + 'kg</span>' +
             '</div>' +
-            (entry.note ? '<p class="text-xs text-gray-400 mt-0.5">' + escHtml(entry.note) + '</p>' : '') +
+            (entry.note ? '<p class="text-xs text-slate-500 mt-0.5">' + escHtml(entry.note) + '</p>' : '') +
           '</div>' +
         '</li>';
     });

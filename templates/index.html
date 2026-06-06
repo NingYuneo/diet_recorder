@@ -6,29 +6,30 @@
 
 <!-- Date header -->
 <div class="mb-4">
-  <p class="text-xs font-semibold text-brand-600 uppercase tracking-widest" id="today-date"></p>
-  <h1 class="text-2xl font-bold text-gray-800 mt-0.5">Today's Summary</h1>
+  <p class="text-xs font-semibold text-blue-400 uppercase tracking-widest" id="today-date"></p>
+  <h1 class="text-2xl font-bold text-slate-100 mt-0.5">Today's Summary</h1>
 </div>
 
 <!-- Calorie ring card -->
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+<div class="card rounded-2xl shadow-xl p-5 mb-4">
   <div class="flex items-center justify-between mb-3">
     <div>
-      <p class="text-sm text-gray-500 font-medium">Calories</p>
-      <p class="text-3xl font-bold text-gray-900" id="cal-consumed">{{ totals.calories | round(0) | int }}</p>
-      <p class="text-xs text-gray-400 mt-0.5">of {{ goals.calories | int }} kcal goal</p>
+      <p class="text-sm text-slate-400 font-medium">Calories</p>
+      <p class="text-3xl font-bold text-slate-100" id="cal-consumed">{{ totals.calories | round(0) | int }}</p>
+      <p class="text-xs text-slate-500 mt-0.5">of {{ goals.calories | int }} kcal goal</p>
     </div>
-    <!-- Mini donut ring -->
+    <!-- Donut ring -->
     <div class="relative w-20 h-20">
       <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="32" fill="none" stroke="#f3f4f6" stroke-width="10"/>
-        <circle cx="40" cy="40" r="32" fill="none" stroke="#22c55e" stroke-width="10"
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#0d2040" stroke-width="10"/>
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#3b82f6" stroke-width="10"
           stroke-dasharray="201"
           stroke-dashoffset="{{ [0, (201 - (201 * [totals.calories, goals.calories] | min / goals.calories))] | max | round(1) }}"
           stroke-linecap="round"
-          id="cal-arc"/>
+          id="cal-arc"
+          style="filter: drop-shadow(0 0 6px rgba(59,130,246,0.5))"/>
       </svg>
-      <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-brand-600" id="cal-pct">
+      <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-blue-400" id="cal-pct">
         {{ pct(totals.calories, goals.calories) }}%
       </span>
     </div>
@@ -36,53 +37,53 @@
 
   {% set remaining = goals.calories - totals.calories %}
   {% if remaining > 0 %}
-  <p class="text-xs text-gray-400 text-center">
-    <span class="font-semibold text-brand-600">{{ remaining | round(0) | int }} kcal</span> remaining
+  <p class="text-xs text-slate-500 text-center">
+    <span class="font-semibold text-blue-400">{{ remaining | round(0) | int }} kcal</span> remaining
   </p>
   {% else %}
-  <p class="text-xs text-center text-rose-500 font-semibold">
+  <p class="text-xs text-center text-rose-400 font-semibold">
     Goal exceeded by {{ (remaining * -1) | round(0) | int }} kcal
   </p>
   {% endif %}
 </div>
 
-<!-- Macro progress bars card -->
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5 space-y-4">
-  <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Macros</h2>
+<!-- Macro progress bars -->
+<div class="card rounded-2xl shadow-xl p-5 mb-5 space-y-4">
+  <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Macros</h2>
 
   <!-- Protein -->
   <div>
-    <div class="flex justify-between text-sm mb-1">
-      <span class="font-medium text-gray-700">🥩 Protein</span>
-      <span class="text-gray-500">{{ totals.protein | round(1) }}g / {{ goals.protein | int }}g</span>
+    <div class="flex justify-between text-sm mb-1.5">
+      <span class="font-medium text-slate-200">🥩 Protein</span>
+      <span class="text-slate-400">{{ totals.protein | round(1) }}g / {{ goals.protein | int }}g</span>
     </div>
-    <div class="w-full bg-gray-100 rounded-full h-3">
-      <div class="progress-bar bg-blue-500 h-3 rounded-full"
-           style="width: {{ pct(totals.protein, goals.protein) }}%"></div>
+    <div class="w-full rounded-full h-2.5" style="background:#0d2040">
+      <div class="progress-bar h-2.5 rounded-full bg-blue-500"
+           style="width: {{ pct(totals.protein, goals.protein) }}%; box-shadow: 0 0 8px rgba(59,130,246,0.4)"></div>
     </div>
   </div>
 
   <!-- Carbs -->
   <div>
-    <div class="flex justify-between text-sm mb-1">
-      <span class="font-medium text-gray-700">🌾 Carbs</span>
-      <span class="text-gray-500">{{ totals.carbs | round(1) }}g / {{ goals.carbs | int }}g</span>
+    <div class="flex justify-between text-sm mb-1.5">
+      <span class="font-medium text-slate-200">🌾 Carbs</span>
+      <span class="text-slate-400">{{ totals.carbs | round(1) }}g / {{ goals.carbs | int }}g</span>
     </div>
-    <div class="w-full bg-gray-100 rounded-full h-3">
-      <div class="progress-bar bg-amber-400 h-3 rounded-full"
-           style="width: {{ pct(totals.carbs, goals.carbs) }}%"></div>
+    <div class="w-full rounded-full h-2.5" style="background:#1f1506">
+      <div class="progress-bar h-2.5 rounded-full bg-amber-400"
+           style="width: {{ pct(totals.carbs, goals.carbs) }}%; box-shadow: 0 0 8px rgba(251,191,36,0.35)"></div>
     </div>
   </div>
 
   <!-- Fat -->
   <div>
-    <div class="flex justify-between text-sm mb-1">
-      <span class="font-medium text-gray-700">🧈 Fat</span>
-      <span class="text-gray-500">{{ totals.fat | round(1) }}g / {{ goals.fat | int }}g</span>
+    <div class="flex justify-between text-sm mb-1.5">
+      <span class="font-medium text-slate-200">🧈 Fat</span>
+      <span class="text-slate-400">{{ totals.fat | round(1) }}g / {{ goals.fat | int }}g</span>
     </div>
-    <div class="w-full bg-gray-100 rounded-full h-3">
-      <div class="progress-bar bg-rose-400 h-3 rounded-full"
-           style="width: {{ pct(totals.fat, goals.fat) }}%"></div>
+    <div class="w-full rounded-full h-2.5" style="background:#200a0d">
+      <div class="progress-bar h-2.5 rounded-full bg-rose-400"
+           style="width: {{ pct(totals.fat, goals.fat) }}%; box-shadow: 0 0 8px rgba(251,113,133,0.35)"></div>
     </div>
   </div>
 </div>
@@ -99,20 +100,21 @@
   {% set meal_logs = logs | selectattr('meal_type', 'equalto', meal_key) | list %}
   {% set meal_calories = meal_logs | sum(attribute='calories') %}
 
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+  <div class="card rounded-2xl shadow-xl overflow-hidden mb-3">
     <!-- Section header -->
-    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50 bg-gray-50/50">
+    <div class="section-header flex items-center justify-between px-5 py-3">
       <div class="flex items-center gap-2">
         <span class="text-lg leading-none">{{ meal_icon }}</span>
-        <h2 class="text-sm font-semibold text-gray-700">{{ meal_label }}</h2>
+        <h2 class="text-sm font-semibold text-slate-200">{{ meal_label }}</h2>
         {% if meal_logs %}
-        <span class="text-xs text-brand-600 font-semibold bg-brand-50 rounded-full px-2 py-0.5">
+        <span class="text-xs text-blue-300 font-semibold rounded-full px-2 py-0.5"
+              style="background: rgba(59,130,246,0.15)">
           {{ meal_calories | round(0) | int }} kcal
         </span>
         {% endif %}
       </div>
       <a href="/log?meal={{ meal_key }}"
-         class="text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1">
+         class="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -122,22 +124,22 @@
     </div>
 
     {% if meal_logs %}
-    <ul class="divide-y divide-gray-50" id="meal-list-{{ meal_key }}">
+    <ul class="divide-y divide-white/[0.04]" id="meal-list-{{ meal_key }}">
       {% for log in meal_logs %}
       <li class="px-5 py-3.5 flex items-start justify-between gap-3" id="log-{{ log.id }}">
         <div class="flex-1 min-w-0">
-          <p class="font-medium text-gray-800 truncate text-sm">{{ log.food_name }}</p>
-          <p class="text-xs text-gray-400 mt-0.5">{{ log.quantity_grams | round(0) | int }}g</p>
-          <div class="flex gap-3 mt-1 text-xs text-gray-500">
-            <span class="text-brand-600 font-semibold">{{ log.calories | round(0) | int }} kcal</span>
+          <p class="font-medium text-slate-200 truncate text-sm">{{ log.food_name }}</p>
+          <p class="text-xs text-slate-500 mt-0.5">{{ log.quantity_grams | round(0) | int }}g</p>
+          <div class="flex gap-3 mt-1 text-xs text-slate-500">
+            <span class="text-blue-400 font-semibold">{{ log.calories | round(0) | int }} kcal</span>
             <span>P: {{ log.protein | round(1) }}g</span>
             <span>C: {{ log.carbs | round(1) }}g</span>
             <span>F: {{ log.fat | round(1) }}g</span>
           </div>
         </div>
         <button onclick="deleteLog({{ log.id }})"
-                class="flex-shrink-0 p-2 text-gray-300 hover:text-rose-500 active:text-rose-600
-                       transition-colors rounded-lg hover:bg-rose-50"
+                class="flex-shrink-0 p-2 text-slate-600 hover:text-rose-400 active:text-rose-500
+                       transition-colors rounded-lg hover:bg-rose-500/10"
                 aria-label="Delete">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -151,7 +153,7 @@
     </ul>
     {% else %}
     <div class="px-5 py-4 text-center" id="empty-{{ meal_key }}">
-      <p class="text-gray-400 text-xs">Nothing logged yet</p>
+      <p class="text-slate-600 text-xs">Nothing logged yet</p>
     </div>
     {% endif %}
   </div>
@@ -162,8 +164,8 @@
 {% block fab %}
 <div class="fixed bottom-6 right-4 z-40">
   <a href="/log"
-     class="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 active:bg-brand-800
-            text-white font-semibold rounded-full px-5 py-3 shadow-lg transition-colors">
+     class="flex items-center gap-2 text-white font-semibold rounded-full px-5 py-3 shadow-2xl transition-all"
+     style="background: linear-gradient(135deg, #1d4ed8, #3b82f6); box-shadow: 0 4px 20px rgba(59,130,246,0.45);">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>

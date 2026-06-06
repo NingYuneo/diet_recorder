@@ -11,28 +11,29 @@
         extend: {
           colors: {
             brand: {
-              50:  '#f0fdf4',
-              100: '#dcfce7',
-              200: '#bbf7d0',
-              300: '#86efac',
-              400: '#4ade80',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-              800: '#166534',
-              900: '#14532d',
+              50:  '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
             }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"Segoe UI"', 'system-ui', 'sans-serif'],
           }
         }
       }
     }
   </script>
   <style>
-    /* smooth progress bar transitions */
     .progress-bar { transition: width 0.6s ease; }
-    /* tap highlight suppression on mobile */
     * { -webkit-tap-highlight-color: transparent; }
-    /* week strip pill styles */
+
     .week-pill {
       display: flex;
       flex-direction: column;
@@ -45,56 +46,82 @@
       font-weight: 600;
       line-height: 1.1;
       transition: all 0.15s ease;
-      border: 2px solid transparent;
+      border: 1.5px solid transparent;
       cursor: default;
     }
     .week-pill-today {
-      background-color: #16a34a;
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
       color: #fff;
-      border-color: #16a34a;
+      border-color: #60a5fa;
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.45);
     }
     .week-pill-met {
-      background-color: transparent;
-      color: #15803d;
-      border-color: #22c55e;
+      background-color: rgba(59, 130, 246, 0.12);
+      color: #60a5fa;
+      border-color: #3b82f6;
     }
     .week-pill-partial {
-      background-color: transparent;
-      color: #92400e;
+      background-color: rgba(251, 191, 36, 0.1);
+      color: #fbbf24;
       border-color: #fbbf24;
     }
     .week-pill-empty {
       background-color: transparent;
-      color: #9ca3af;
-      border-color: #e5e7eb;
+      color: #3d5068;
+      border-color: #1e3048;
+    }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #060d1b; }
+    ::-webkit-scrollbar-thumb { background: #1a2d48; border-radius: 2px; }
+
+    .card {
+      background: #0d1829;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .section-header {
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .input-dark {
+      background: #081220;
+      border: 1px solid #1a2d48;
+      color: #e2e8f0;
+    }
+    .input-dark::placeholder { color: #3d5068; }
+    .input-dark:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
     }
   </style>
   {% block head %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen font-sans antialiased">
+<body class="bg-[#060d1b] min-h-screen font-sans antialiased">
 
-  <!-- Top nav -->
-  <nav class="bg-brand-600 text-white shadow-md sticky top-0 z-50">
+  <!-- Top nav — macOS dark glass bar -->
+  <nav class="sticky top-0 z-50 border-b border-white/[0.06]"
+       style="background: rgba(4,8,20,0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);">
     <div class="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg tracking-tight text-white">
         <span class="text-2xl">🥗</span>
         <span>Diet Monitor</span>
       </a>
       <div class="flex items-center gap-3 text-sm font-medium">
         <a href="/"
-           class="hover:text-brand-200 transition-colors {% if request.url.path == '/' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+           class="transition-colors {% if request.url.path == '/' %}text-white border-b-2 border-blue-400 pb-0.5{% else %}text-slate-500 hover:text-blue-300{% endif %}">
           Today
         </a>
         <a href="/log"
-           class="hover:text-brand-200 transition-colors {% if request.url.path == '/log' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+           class="transition-colors {% if request.url.path == '/log' %}text-white border-b-2 border-blue-400 pb-0.5{% else %}text-slate-500 hover:text-blue-300{% endif %}">
           Log
         </a>
         <a href="/history"
-           class="hover:text-brand-200 transition-colors {% if request.url.path == '/history' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+           class="transition-colors {% if request.url.path == '/history' %}text-white border-b-2 border-blue-400 pb-0.5{% else %}text-slate-500 hover:text-blue-300{% endif %}">
           History
         </a>
         <a href="/profile"
-           class="hover:text-brand-200 transition-colors {% if request.url.path == '/profile' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+           class="transition-colors {% if request.url.path == '/profile' %}text-white border-b-2 border-blue-400 pb-0.5{% else %}text-slate-500 hover:text-blue-300{% endif %}">
           Profile
         </a>
       </div>
@@ -102,10 +129,10 @@
   </nav>
 
   <!-- Weekly calendar strip -->
-  <div class="bg-white border-b border-gray-100 shadow-sm sticky top-14 z-40">
+  <div class="sticky top-14 z-40 border-b border-white/[0.04]"
+       style="background: rgba(6,13,27,0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);">
     <div class="max-w-lg mx-auto px-3 py-2 overflow-x-auto">
       <div id="week-strip" class="flex gap-1.5 min-w-max mx-auto justify-center">
-        <!-- Populated by JS on DOMContentLoaded -->
         <div class="flex gap-1.5 animate-pulse">
           {% for i in range(7) %}
           <div class="week-pill week-pill-empty">
@@ -123,17 +150,16 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Bottom floating action button -->
   {% block fab %}{% endblock %}
 
-  <!-- Global toast container -->
+  <!-- Global toast -->
   <div id="global-toast"
-       class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm
-              rounded-full px-5 py-2.5 shadow-lg opacity-0 pointer-events-none
-              transition-opacity duration-300 z-[100] whitespace-nowrap">
+       class="fixed bottom-8 left-1/2 -translate-x-1/2 text-slate-100 text-sm
+              rounded-full px-5 py-2.5 shadow-2xl opacity-0 pointer-events-none
+              transition-opacity duration-300 z-[100] whitespace-nowrap"
+       style="background: rgba(13,24,41,0.95); border: 1px solid rgba(59,130,246,0.3); backdrop-filter: blur(12px);">
   </div>
 
-  <!-- Week strip init script -->
   <script>
     (function () {
       async function loadWeekStrip() {
@@ -141,22 +167,17 @@
           const res  = await fetch('/api/week-status');
           const data = await res.json();
           renderWeekStrip(data.week || []);
-        } catch (e) {
-          // silently fail — strip stays as skeleton
-        }
+        } catch (e) {}
       }
 
       function renderWeekStrip(week) {
         const strip = document.getElementById('week-strip');
         if (!strip) return;
         strip.innerHTML = '';
-
         week.forEach(function (day) {
           const pill = document.createElement('div');
-
           let cls = 'week-pill ';
           let indicator = '';
-
           if (day.is_today) {
             cls += 'week-pill-today';
           } else if (day.has_logs && day.met_calorie_goal) {
@@ -168,12 +189,10 @@
           } else {
             cls += 'week-pill-empty';
           }
-
           pill.className = cls;
           pill.innerHTML =
             '<span>' + day.day_name + indicator + '</span>' +
             '<span class="text-[0.65rem] font-bold opacity-80">' + day.day_num + '</span>';
-
           strip.appendChild(pill);
         });
       }
