@@ -558,6 +558,62 @@ function escHtml(str) {
 
   var suggestedGoals = null;  // stored after profile fetch
 
+  // ── Manual goals inputs ────────────────────────────────────
+  var saveGoalsBtn    = document.getElementById('save-goals-btn');
+  var goalCalInput    = document.getElementById('goal-calories');
+  var goalProtInput   = document.getElementById('goal-protein');
+  var goalCarbsInput  = document.getElementById('goal-carbs');
+  var goalFatInput    = document.getElementById('goal-fat');
+
+  async function loadCurrentGoals() {
+    try {
+      var res  = await fetch('/api/today');
+      var data = await res.json();
+      var g    = data.goals || {};
+      if (goalCalInput   && g.calories != null) goalCalInput.value   = g.calories;
+      if (goalProtInput  && g.protein  != null) goalProtInput.value  = g.protein;
+      if (goalCarbsInput && g.carbs    != null) goalCarbsInput.value = g.carbs;
+      if (goalFatInput   && g.fat      != null) goalFatInput.value   = g.fat;
+    } catch (e) {}
+  }
+
+  if (saveGoalsBtn) {
+    saveGoalsBtn.addEventListener('click', async function () {
+      var calories = parseFloat(goalCalInput.value);
+      var protein  = parseFloat(goalProtInput.value);
+      var carbs    = parseFloat(goalCarbsInput.value);
+      var fat      = parseFloat(goalFatInput.value);
+
+      if ([calories, protein, carbs, fat].some(isNaN)) {
+        showToast('Please fill in all four goal fields.', true);
+        return;
+      }
+
+      saveGoalsBtn.disabled    = true;
+      saveGoalsBtn.textContent = 'Saving…';
+
+      try {
+        var res = await fetch('/api/goals', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ calories, protein, carbs, fat }),
+        });
+        if (res.ok) {
+          showToast('✅ Goals saved!');
+        } else {
+          showToast('❌ Could not save goals.', true);
+        }
+      } catch (e) {
+        showToast('❌ Network error.', true);
+      } finally {
+        saveGoalsBtn.disabled    = false;
+        saveGoalsBtn.textContent = 'Save Goals';
+      }
+    });
+  }
+
+  loadCurrentGoals();
+
   // ── Load suggested goals on page open ──────────────────────
   async function loadSuggestedGoals() {
     try {

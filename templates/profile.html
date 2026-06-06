@@ -119,6 +119,52 @@
   </form>
 </div>
 
+<!-- Manual Daily Goals card -->
+<div class="card rounded-2xl shadow-xl p-5 mb-5">
+  <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">Daily Goals</h2>
+
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5" for="goal-calories">
+        Calories (kcal)
+      </label>
+      <input id="goal-calories" type="number" min="500" max="10000" step="10"
+             placeholder="e.g. 2900"
+             class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5" for="goal-protein">
+        Protein (g)
+      </label>
+      <input id="goal-protein" type="number" min="0" max="600" step="1"
+             placeholder="e.g. 190"
+             class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5" for="goal-carbs">
+        Carbs (g)
+      </label>
+      <input id="goal-carbs" type="number" min="0" max="1500" step="1"
+             placeholder="e.g. 330"
+             class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5" for="goal-fat">
+        Fat (g)
+      </label>
+      <input id="goal-fat" type="number" min="0" max="500" step="1"
+             placeholder="e.g. 85"
+             class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+    </div>
+  </div>
+
+  <button id="save-goals-btn"
+          class="w-full text-white font-semibold rounded-xl py-3.5 text-sm transition-all"
+          style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">
+    Save Goals
+  </button>
+</div>
+
 <!-- Suggested Goals card -->
 <div class="card rounded-2xl shadow-xl p-5 mb-5" id="suggested-goals-card">
   <div class="flex items-center justify-between mb-3">
