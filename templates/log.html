@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Log Food — Diet Monitor{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-gray-800">Log Food</h1>
+  <p class="text-sm text-gray-400 mt-1">Search, select foods, and save them all at once.</p>
+</div>
+
+<!-- Meal type selector -->
+<div class="mb-5">
+  <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Meal Type</p>
+  <div class="flex gap-2 flex-wrap" id="meal-type-pills">
+    <button type="button" data-meal="breakfast"
+            class="meal-pill px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all
+                   border-gray-200 text-gray-500 hover:border-brand-400 hover:text-brand-700">
+      🌅 Breakfast
+    </button>
+    <button type="button" data-meal="lunch"
+            class="meal-pill px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all
+                   border-gray-200 text-gray-500 hover:border-brand-400 hover:text-brand-700">
+      ☀️ Lunch
+    </button>
+    <button type="button" data-meal="dinner"
+            class="meal-pill px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all
+                   border-gray-200 text-gray-500 hover:border-brand-400 hover:text-brand-700">
+      🌙 Dinner
+    </button>
+    <button type="button" data-meal="snacks"
+            class="meal-pill px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all
+                   border-gray-200 text-gray-500 hover:border-brand-400 hover:text-brand-700">
+      🍎 Snacks
+    </button>
+  </div>
+</div>
+
+<!-- Search box with voice button -->
+<div class="relative mb-4 flex gap-2 items-center">
+  <div class="relative flex-1">
+    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    </div>
+    <input
+      id="search-input"
+      type="search"
+      placeholder="Search foods (e.g. banana, chicken…)"
+      autocomplete="off"
+      class="w-full pl-10 pr-4 py-3.5 rounded-xl border border-gray-200 bg-white shadow-sm
+             text-gray-800 placeholder-gray-400 text-sm
+             focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+    />
+    <!-- Spinner -->
+    <div id="search-spinner" class="absolute inset-y-0 right-3 flex items-center hidden">
+      <svg class="w-4 h-4 animate-spin text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Voice button -->
+  <button id="voice-btn" type="button"
+          title="Search by voice"
+          class="flex-shrink-0 w-12 h-12 flex items-center justify-center
+                 rounded-xl border-2 border-gray-200 bg-white text-gray-400
+                 hover:border-brand-400 hover:text-brand-600 active:bg-brand-50
+                 transition-all shadow-sm">
+    <!-- Mic icon -->
+    <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="2" width="6" height="11" rx="3"/>
+      <path d="M19 10a7 7 0 01-14 0"/>
+      <line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="8" y1="22" x2="16" y2="22"/>
+    </svg>
+    <!-- Recording indicator (hidden by default) -->
+    <span id="mic-recording" class="hidden w-3 h-3 rounded-full bg-rose-500 animate-pulse"></span>
+  </button>
+  <button id="scan-btn" type="button"
+          title="Scan product label"
+          class="flex-shrink-0 w-12 h-12 flex items-center justify-center
+                 rounded-xl border-2 border-gray-200 bg-white text-gray-400
+                 hover:border-brand-400 hover:text-brand-600 active:bg-brand-50
+                 transition-all shadow-sm">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M7 4h10l2 3H5l2-3z" />
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14v11a2 2 0 01-2 2H7a2 2 0 01-2-2V7z" />
+      <circle cx="12" cy="13" r="3" />
+    </svg>
+  </button>
+</div>
+
+<input id="image-input" type="file" accept="image/*" capture="environment" class="hidden" />
+
+<!-- Voice not supported notice (hidden until checked) -->
+<div id="voice-unsupported" class="hidden mb-3 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-4 py-2">
+  Voice input is not supported in this browser. Try Chrome or Safari.
+</div>
+
+<div id="ocr-result" class="hidden mb-3 bg-white border border-gray-200 rounded-2xl p-4 text-sm text-gray-700">
+  <p class="font-semibold text-gray-800 mb-2">Scanned product details</p>
+  <div id="ocr-result-output" class="space-y-2"></div>
+</div>
+
+<!-- Search results -->
+<div id="search-results" class="space-y-2 mb-5"></div>
+
+<!-- Divider -->
+<div id="divider" class="hidden border-t border-dashed border-gray-200 my-5"></div>
+
+<!-- Add-to-cart form (hidden until food selected) -->
+<div id="log-form-section" class="hidden">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+    <h2 class="font-semibold text-gray-800 mb-1" id="selected-food-name">Selected food</h2>
+    <p class="text-xs text-gray-400 mb-4" id="selected-food-macros"></p>
+
+    <label class="block text-sm font-medium text-gray-700 mb-1.5" id="amount-label">Amount</label>
+    <div class="flex gap-2 mb-4">
+      <input
+        id="grams-input"
+        type="number"
+        value="1"
+        min="1"
+        max="5000"
+        step="0.1"
+        class="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800
+               focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+      />
+      <select id="unit-selector" class="border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+        <option value="unit">unit</option>
+        <option value="g">g</option>
+      </select>
+    </div>
+
+    <!-- Live macro preview -->
+    <div class="bg-brand-50 rounded-xl p-3 mb-4 text-xs text-gray-600 space-y-1" id="macro-preview">
+      <div class="flex justify-between">
+        <span>Calories</span>
+        <span class="font-semibold text-brand-700" id="prev-cal">—</span>
+      </div>
+      <div class="flex justify-between">
+        <span>Protein</span>
+        <span class="font-semibold" id="prev-prot">—</span>
+      </div>
+      <div class="flex justify-between">
+        <span>Carbs</span>
+        <span class="font-semibold" id="prev-carbs">—</span>
+      </div>
+      <div class="flex justify-between">
+        <span>Fat</span>
+        <span class="font-semibold" id="prev-fat">—</span>
+      </div>
+    </div>
+
+    <button id="add-to-cart-btn"
+      class="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold
+             rounded-xl py-3.5 text-sm transition-colors">
+      + Add to Cart
+    </button>
+
+    <button id="cancel-btn"
+      class="w-full mt-2 text-gray-400 hover:text-gray-600 text-sm py-2 transition-colors">
+      Cancel
+    </button>
+  </div>
+</div>
+
+<!-- Cart section -->
+<div id="cart-section" class="hidden mt-5">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-50 bg-gray-50/50">
+      <h2 class="text-sm font-semibold text-gray-700">Cart</h2>
+      <span id="cart-calorie-total" class="text-xs text-brand-600 font-semibold bg-brand-50 rounded-full px-2 py-0.5">
+        0 kcal
+      </span>
+    </div>
+
+    <ul id="cart-list" class="divide-y divide-gray-50"></ul>
+
+    <div class="px-5 py-4">
+      <button id="save-all-btn"
+        class="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold
+               rounded-xl py-3.5 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        Save All to Log
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block head %}
+<script src="/static/app.js" defer></script>
+{% endblock %}

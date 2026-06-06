@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Diet Monitor{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* smooth progress bar transitions */
+    .progress-bar { transition: width 0.6s ease; }
+    /* tap highlight suppression on mobile */
+    * { -webkit-tap-highlight-color: transparent; }
+    /* week strip pill styles */
+    .week-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.75rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      line-height: 1.1;
+      transition: all 0.15s ease;
+      border: 2px solid transparent;
+      cursor: default;
+    }
+    .week-pill-today {
+      background-color: #16a34a;
+      color: #fff;
+      border-color: #16a34a;
+    }
+    .week-pill-met {
+      background-color: transparent;
+      color: #15803d;
+      border-color: #22c55e;
+    }
+    .week-pill-partial {
+      background-color: transparent;
+      color: #92400e;
+      border-color: #fbbf24;
+    }
+    .week-pill-empty {
+      background-color: transparent;
+      color: #9ca3af;
+      border-color: #e5e7eb;
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen font-sans antialiased">
+
+  <!-- Top nav -->
+  <nav class="bg-brand-600 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+        <span class="text-2xl">🥗</span>
+        <span>Diet Monitor</span>
+      </a>
+      <div class="flex items-center gap-3 text-sm font-medium">
+        <a href="/"
+           class="hover:text-brand-200 transition-colors {% if request.url.path == '/' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+          Today
+        </a>
+        <a href="/log"
+           class="hover:text-brand-200 transition-colors {% if request.url.path == '/log' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+          Log
+        </a>
+        <a href="/history"
+           class="hover:text-brand-200 transition-colors {% if request.url.path == '/history' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+          History
+        </a>
+        <a href="/profile"
+           class="hover:text-brand-200 transition-colors {% if request.url.path == '/profile' %}text-white border-b-2 border-white pb-0.5{% else %}text-brand-100{% endif %}">
+          Profile
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Weekly calendar strip -->
+  <div class="bg-white border-b border-gray-100 shadow-sm sticky top-14 z-40">
+    <div class="max-w-lg mx-auto px-3 py-2 overflow-x-auto">
+      <div id="week-strip" class="flex gap-1.5 min-w-max mx-auto justify-center">
+        <!-- Populated by JS on DOMContentLoaded -->
+        <div class="flex gap-1.5 animate-pulse">
+          {% for i in range(7) %}
+          <div class="week-pill week-pill-empty">
+            <span>---</span>
+            <span>--</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page content -->
+  <main class="max-w-lg mx-auto px-4 py-5 pb-28">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bottom floating action button -->
+  {% block fab %}{% endblock %}
+
+  <!-- Global toast container -->
+  <div id="global-toast"
+       class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm
+              rounded-full px-5 py-2.5 shadow-lg opacity-0 pointer-events-none
+              transition-opacity duration-300 z-[100] whitespace-nowrap">
+  </div>
+
+  <!-- Week strip init script -->
+  <script>
+    (function () {
+      async function loadWeekStrip() {
+        try {
+          const res  = await fetch('/api/week-status');
+          const data = await res.json();
+          renderWeekStrip(data.week || []);
+        } catch (e) {
+          // silently fail — strip stays as skeleton
+        }
+      }
+
+      function renderWeekStrip(week) {
+        const strip = document.getElementById('week-strip');
+        if (!strip) return;
+        strip.innerHTML = '';
+
+        week.forEach(function (day) {
+          const pill = document.createElement('div');
+
+          let cls = 'week-pill ';
+          let indicator = '';
+
+          if (day.is_today) {
+            cls += 'week-pill-today';
+          } else if (day.has_logs && day.met_calorie_goal) {
+            cls += 'week-pill-met';
+            indicator = ' ✓';
+          } else if (day.has_logs) {
+            cls += 'week-pill-partial';
+            indicator = ' ·';
+          } else {
+            cls += 'week-pill-empty';
+          }
+
+          pill.className = cls;
+          pill.innerHTML =
+            '<span>' + day.day_name + indicator + '</span>' +
+            '<span class="text-[0.65rem] font-bold opacity-80">' + day.day_num + '</span>';
+
+          strip.appendChild(pill);
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', loadWeekStrip);
+    })();
+  </script>
+
+</body>
+</html>

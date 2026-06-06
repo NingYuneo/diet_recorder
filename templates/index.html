@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Diet Monitor{% endblock %}
+
+{% block content %}
+
+<!-- Date header -->
+<div class="mb-4">
+  <p class="text-xs font-semibold text-brand-600 uppercase tracking-widest" id="today-date"></p>
+  <h1 class="text-2xl font-bold text-gray-800 mt-0.5">Today's Summary</h1>
+</div>
+
+<!-- Calorie ring card -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+  <div class="flex items-center justify-between mb-3">
+    <div>
+      <p class="text-sm text-gray-500 font-medium">Calories</p>
+      <p class="text-3xl font-bold text-gray-900" id="cal-consumed">{{ totals.calories | round(0) | int }}</p>
+      <p class="text-xs text-gray-400 mt-0.5">of {{ goals.calories | int }} kcal goal</p>
+    </div>
+    <!-- Mini donut ring -->
+    <div class="relative w-20 h-20">
+      <svg class="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#f3f4f6" stroke-width="10"/>
+        <circle cx="40" cy="40" r="32" fill="none" stroke="#22c55e" stroke-width="10"
+          stroke-dasharray="201"
+          stroke-dashoffset="{{ [0, (201 - (201 * [totals.calories, goals.calories] | min / goals.calories))] | max | round(1) }}"
+          stroke-linecap="round"
+          id="cal-arc"/>
+      </svg>
+      <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-brand-600" id="cal-pct">
+        {{ pct(totals.calories, goals.calories) }}%
+      </span>
+    </div>
+  </div>
+
+  {% set remaining = goals.calories - totals.calories %}
+  {% if remaining > 0 %}
+  <p class="text-xs text-gray-400 text-center">
+    <span class="font-semibold text-brand-600">{{ remaining | round(0) | int }} kcal</span> remaining
+  </p>
+  {% else %}
+  <p class="text-xs text-center text-rose-500 font-semibold">
+    Goal exceeded by {{ (remaining * -1) | round(0) | int }} kcal
+  </p>
+  {% endif %}
+</div>
+
+<!-- Macro progress bars card -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-5 space-y-4">
+  <h2 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Macros</h2>
+
+  <!-- Protein -->
+  <div>
+    <div class="flex justify-between text-sm mb-1">
+      <span class="font-medium text-gray-700">🥩 Protein</span>
+      <span class="text-gray-500">{{ totals.protein | round(1) }}g / {{ goals.protein | int }}g</span>
+    </div>
+    <div class="w-full bg-gray-100 rounded-full h-3">
+      <div class="progress-bar bg-blue-500 h-3 rounded-full"
+           style="width: {{ pct(totals.protein, goals.protein) }}%"></div>
+    </div>
+  </div>
+
+  <!-- Carbs -->
+  <div>
+    <div class="flex justify-between text-sm mb-1">
+      <span class="font-medium text-gray-700">🌾 Carbs</span>
+      <span class="text-gray-500">{{ totals.carbs | round(1) }}g / {{ goals.carbs | int }}g</span>
+    </div>
+    <div class="w-full bg-gray-100 rounded-full h-3">
+      <div class="progress-bar bg-amber-400 h-3 rounded-full"
+           style="width: {{ pct(totals.carbs, goals.carbs) }}%"></div>
+    </div>
+  </div>
+
+  <!-- Fat -->
+  <div>
+    <div class="flex justify-between text-sm mb-1">
+      <span class="font-medium text-gray-700">🧈 Fat</span>
+      <span class="text-gray-500">{{ totals.fat | round(1) }}g / {{ goals.fat | int }}g</span>
+    </div>
+    <div class="w-full bg-gray-100 rounded-full h-3">
+      <div class="progress-bar bg-rose-400 h-3 rounded-full"
+           style="width: {{ pct(totals.fat, goals.fat) }}%"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Meals grouped by meal type -->
+{% set meal_sections = [
+  ('breakfast', '🌅', 'Breakfast'),
+  ('lunch',     '☀️',  'Lunch'),
+  ('dinner',    '🌙', 'Dinner'),
+  ('snacks',    '🍎', 'Snacks'),
+] %}
+
+{% for meal_key, meal_icon, meal_label in meal_sections %}
+  {% set meal_logs = logs | selectattr('meal_type', 'equalto', meal_key) | list %}
+  {% set meal_calories = meal_logs | sum(attribute='calories') %}
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-3">
+    <!-- Section header -->
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50 bg-gray-50/50">
+      <div class="flex items-center gap-2">
+        <span class="text-lg leading-none">{{ meal_icon }}</span>
+        <h2 class="text-sm font-semibold text-gray-700">{{ meal_label }}</h2>
+        {% if meal_logs %}
+        <span class="text-xs text-brand-600 font-semibold bg-brand-50 rounded-full px-2 py-0.5">
+          {{ meal_calories | round(0) | int }} kcal
+        </span>
+        {% endif %}
+      </div>
+      <a href="/log?meal={{ meal_key }}"
+         class="text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add
+      </a>
+    </div>
+
+    {% if meal_logs %}
+    <ul class="divide-y divide-gray-50" id="meal-list-{{ meal_key }}">
+      {% for log in meal_logs %}
+      <li class="px-5 py-3.5 flex items-start justify-between gap-3" id="log-{{ log.id }}">
+        <div class="flex-1 min-w-0">
+          <p class="font-medium text-gray-800 truncate text-sm">{{ log.food_name }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ log.quantity_grams | round(0) | int }}g</p>
+          <div class="flex gap-3 mt-1 text-xs text-gray-500">
+            <span class="text-brand-600 font-semibold">{{ log.calories | round(0) | int }} kcal</span>
+            <span>P: {{ log.protein | round(1) }}g</span>
+            <span>C: {{ log.carbs | round(1) }}g</span>
+            <span>F: {{ log.fat | round(1) }}g</span>
+          </div>
+        </div>
+        <button onclick="deleteLog({{ log.id }})"
+                class="flex-shrink-0 p-2 text-gray-300 hover:text-rose-500 active:text-rose-600
+                       transition-colors rounded-lg hover:bg-rose-50"
+                aria-label="Delete">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="px-5 py-4 text-center" id="empty-{{ meal_key }}">
+      <p class="text-gray-400 text-xs">Nothing logged yet</p>
+    </div>
+    {% endif %}
+  </div>
+{% endfor %}
+
+{% endblock %}
+
+{% block fab %}
+<div class="fixed bottom-6 right-4 z-40">
+  <a href="/log"
+     class="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 active:bg-brand-800
+            text-white font-semibold rounded-full px-5 py-3 shadow-lg transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Log Food
+  </a>
+</div>
+{% endblock %}
+
+{% block head %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('today-date');
+    if (el) {
+      el.textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+  });
+
+  async function deleteLog(id) {
+    if (!confirm('Remove this entry?')) return;
+    try {
+      const res = await fetch(`/api/log/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        const el = document.getElementById(`log-${id}`);
+        if (el) el.remove();
+        window.location.reload();
+      } else {
+        alert('Could not delete entry. Please try again.');
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    }
+  }
+</script>
+{% endblock %}
