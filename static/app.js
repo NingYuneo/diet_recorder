@@ -1044,14 +1044,14 @@ function escHtml(str) {
 
   // ── Modal open / close ──────────────────────────────────────
   function openModal() {
-    modalOverlay.classList.remove('hidden');
-    modalOverlay.classList.add('flex');
-    cfName.focus();
+    if (!modalOverlay) return;
+    modalOverlay.style.display = 'flex';
+    if (cfName) cfName.focus();
   }
 
   function closeModal() {
-    modalOverlay.classList.add('hidden');
-    modalOverlay.classList.remove('flex');
+    if (!modalOverlay) return;
+    modalOverlay.style.display = 'none';
   }
 
   function clearModal() {

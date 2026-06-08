@@ -134,8 +134,8 @@
 
 <!-- Add Custom Food Modal -->
 <div id="cf-modal-overlay"
-     class="fixed inset-0 z-50 hidden items-center justify-center p-4"
-     style="background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);">
+     class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+     style="display:none; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);">
   <div class="w-full max-w-sm rounded-2xl shadow-2xl p-6"
        style="background: #0d1829; border: 1px solid rgba(59,130,246,0.25);">
     <div class="flex items-center justify-between mb-5">
@@ -290,6 +290,4 @@
 
 {% endblock %}
 
-{% block head %}
-<script src="/static/app.js" defer></script>
-{% endblock %}
+{% block head %}{% endblock %}
