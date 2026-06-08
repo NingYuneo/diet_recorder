@@ -1019,25 +1019,55 @@ function escHtml(str) {
 
 // ── Custom foods (log page) ───────────────────────────────────────────────────
 (function initCustomFoods() {
-  var toggleBtn    = document.getElementById('toggle-my-foods');
+  var toggleBtn   = document.getElementById('toggle-my-foods');
   if (!toggleBtn) return;
 
-  var panel        = document.getElementById('my-foods-panel');
-  var chevron      = document.getElementById('my-foods-chevron');
-  var countBadge   = document.getElementById('my-foods-count');
-  var myFoodsList  = document.getElementById('my-foods-list');
-  var saveBtn      = document.getElementById('save-custom-food-btn');
-  var cfName       = document.getElementById('cf-name');
-  var cfKcal       = document.getElementById('cf-kcal');
-  var cfProtein    = document.getElementById('cf-protein');
-  var cfCarbs      = document.getElementById('cf-carbs');
-  var cfFat        = document.getElementById('cf-fat');
-  var cfUnitLabel  = document.getElementById('cf-unit-label');
-  var cfGramsUnit  = document.getElementById('cf-grams-per-unit');
+  var panel       = document.getElementById('my-foods-panel');
+  var chevron     = document.getElementById('my-foods-chevron');
+  var countBadge  = document.getElementById('my-foods-count');
+  var myFoodsList = document.getElementById('my-foods-list');
 
-  var customFoods  = [];
-  var panelOpen    = false;
+  // Modal elements
+  var openModalBtn  = document.getElementById('open-cf-modal');
+  var modalOverlay  = document.getElementById('cf-modal-overlay');
+  var modalCloseBtn = document.getElementById('cf-modal-close');
+  var saveBtn       = document.getElementById('save-custom-food-btn');
+  var cfName        = document.getElementById('cf-name');
+  var cfKcal        = document.getElementById('cf-kcal');
+  var cfProtein     = document.getElementById('cf-protein');
+  var cfCarbs       = document.getElementById('cf-carbs');
+  var cfFat         = document.getElementById('cf-fat');
+  var cfUnitLabel   = document.getElementById('cf-unit-label');
 
+  var customFoods = [];
+  var panelOpen   = false;
+
+  // ── Modal open / close ──────────────────────────────────────
+  function openModal() {
+    modalOverlay.classList.remove('hidden');
+    modalOverlay.classList.add('flex');
+    cfName.focus();
+  }
+
+  function closeModal() {
+    modalOverlay.classList.add('hidden');
+    modalOverlay.classList.remove('flex');
+  }
+
+  function clearModal() {
+    cfName.value = ''; cfKcal.value = ''; cfProtein.value = '';
+    cfCarbs.value = ''; cfFat.value = ''; cfUnitLabel.value = '';
+  }
+
+  if (openModalBtn)  openModalBtn.addEventListener('click', openModal);
+  if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function (e) {
+      if (e.target === modalOverlay) closeModal();
+    });
+  }
+
+  // ── Load & render list ──────────────────────────────────────
   async function loadCustomFoods() {
     try {
       var res  = await fetch('/api/custom-foods');
@@ -1054,10 +1084,12 @@ function escHtml(str) {
     if (!myFoodsList) return;
     myFoodsList.innerHTML = '';
     if (customFoods.length === 0) {
-      myFoodsList.innerHTML = '<p class="text-slate-500 text-xs text-center py-2">No custom foods yet.</p>';
+      myFoodsList.innerHTML =
+        '<p class="text-slate-500 text-xs text-center py-4">No custom foods yet. Tap Add Custom Food to create one.</p>';
       return;
     }
     customFoods.forEach(function (food) {
+      var unitLabel = food.unit_label && food.unit_label !== 'grams' ? food.unit_label : 'serving';
       var card = document.createElement('div');
       card.className = 'flex items-start justify-between gap-3 rounded-xl px-4 py-3';
       card.style.cssText = 'background:#0d1829; border:1px solid rgba(255,255,255,0.07)';
@@ -1069,18 +1101,21 @@ function escHtml(str) {
             '<span>P: ' + food.protein_per_100g + 'g</span>' +
             '<span>C: ' + food.carbs_per_100g + 'g</span>' +
             '<span>F: ' + food.fat_per_100g + 'g</span>' +
-            '<span class="text-slate-600">per 100g</span>' +
+            '<span class="text-slate-600">per ' + escHtml(unitLabel) + '</span>' +
           '</div>' +
         '</button>' +
-        '<button type="button" class="flex-shrink-0 p-1.5 text-slate-600 hover:text-rose-400 transition-colors rounded" data-delete-cf="' + food.id + '" aria-label="Delete">' +
-          '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-            '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>' +
+        '<button type="button" class="flex-shrink-0 p-1.5 text-slate-600 hover:text-rose-400 transition-colors rounded" ' +
+                'data-delete-cf="' + food.id + '" aria-label="Delete">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" ' +
+               'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>' +
+            '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>' +
           '</svg>' +
         '</button>';
       myFoodsList.appendChild(card);
     });
 
-    // Select food to log
+    // Tap a food to select it for logging
     myFoodsList.querySelectorAll('[data-cf-id]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var food = customFoods.find(function (f) { return f.id === parseInt(btn.dataset.cfId, 10); });
@@ -1091,13 +1126,12 @@ function escHtml(str) {
             protein:        food.protein_per_100g,
             carbs:          food.carbs_per_100g,
             fat:            food.fat_per_100g,
-            unit:           food.unit,
-            unit_label:     food.unit_label,
-            grams_per_unit: food.grams_per_unit,
+            unit:           'unit',
+            unit_label:     food.unit_label && food.unit_label !== 'grams' ? food.unit_label : 'serving',
+            grams_per_unit: 100,
             custom:         true,
             custom_id:      food.id,
           });
-          // Close panel after selecting
           panel.classList.add('hidden');
           chevron.style.transform = '';
           panelOpen = false;
@@ -1105,7 +1139,7 @@ function escHtml(str) {
       });
     });
 
-    // Delete food
+    // Delete a food
     myFoodsList.querySelectorAll('[data-delete-cf]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         var id = parseInt(btn.dataset.deleteCf, 10);
@@ -1123,14 +1157,15 @@ function escHtml(str) {
     });
   }
 
-  // Toggle panel
+  // ── Toggle panel ────────────────────────────────────────────
   toggleBtn.addEventListener('click', function () {
     panelOpen = !panelOpen;
     panel.classList.toggle('hidden', !panelOpen);
     chevron.style.transform = panelOpen ? 'rotate(180deg)' : '';
   });
 
-  // Save new custom food
+  // ── Save new custom food ────────────────────────────────────
+  // Macros are stored as per-serving values (grams_per_unit=100 so 1 unit = 100 "virtual g")
   if (saveBtn) {
     saveBtn.addEventListener('click', async function () {
       var name    = cfName.value.trim();
@@ -1139,30 +1174,35 @@ function escHtml(str) {
       var carbs   = parseFloat(cfCarbs.value);
       var fat     = parseFloat(cfFat.value);
 
-      if (!name) { cfName.focus(); showToast('Enter a food name.', true); return; }
-      if ([kcal, protein, carbs, fat].some(isNaN)) { showToast('Fill in all macro fields.', true); return; }
+      if (!name)   { cfName.focus(); showToast('Enter a food name.', true); return; }
+      if ([kcal, protein, carbs, fat].some(isNaN)) {
+        showToast('Fill in all four macro fields.', true); return;
+      }
 
-      var unitLabel     = cfUnitLabel.value.trim() || 'grams';
-      var gramsPerUnit  = parseFloat(cfGramsUnit.value) || null;
-      var unit          = gramsPerUnit ? 'unit' : 'g';
+      var unitLabel = cfUnitLabel.value.trim() || 'serving';
 
-      saveBtn.disabled = true;
+      saveBtn.disabled    = true;
       saveBtn.textContent = 'Saving…';
 
       try {
         var res = await fetch('/api/custom-foods', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            name, calories_per_100g: kcal, protein_per_100g: protein,
-            carbs_per_100g: carbs, fat_per_100g: fat,
-            unit, unit_label: unitLabel, grams_per_unit: gramsPerUnit,
+          body: JSON.stringify({
+            name,
+            calories_per_100g: kcal,
+            protein_per_100g:  protein,
+            carbs_per_100g:    carbs,
+            fat_per_100g:      fat,
+            unit:              'unit',
+            unit_label:        unitLabel,
+            grams_per_unit:    100,
           }),
         });
         if (res.ok) {
-          showToast('✅ Custom food saved!');
-          cfName.value = ''; cfKcal.value = ''; cfProtein.value = '';
-          cfCarbs.value = ''; cfFat.value = ''; cfUnitLabel.value = ''; cfGramsUnit.value = '';
+          showToast('✅ ' + name + ' saved!');
+          clearModal();
+          closeModal();
           await loadCustomFoods();
         } else {
           showToast('❌ Could not save.', true);
@@ -1170,8 +1210,8 @@ function escHtml(str) {
       } catch (e) {
         showToast('❌ Network error.', true);
       } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Custom Food';
+        saveBtn.disabled    = false;
+        saveBtn.textContent = 'Save Food';
       }
     });
   }
