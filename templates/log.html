@@ -104,8 +104,8 @@
   <div id="ocr-result-output" class="space-y-2"></div>
 </div>
 
-<!-- My Foods toggle -->
-<div class="mb-4">
+<!-- My Foods row: toggle + add button always visible -->
+<div class="flex items-center justify-between mb-3">
   <button id="toggle-my-foods" type="button"
           class="flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">
     <svg xmlns="http://www.w3.org/2000/svg" id="my-foods-chevron" class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none"
@@ -115,22 +115,20 @@
     My Foods
     <span id="my-foods-count" class="text-xs font-normal text-slate-500"></span>
   </button>
+
+  <button id="open-cf-modal" type="button"
+          class="flex items-center gap-1 text-xs font-semibold text-white rounded-lg px-3 py-1.5 transition-all"
+          style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+    Add Custom Food
+  </button>
 </div>
 
-<!-- My Foods panel -->
+<!-- My Foods panel (food list only) -->
 <div id="my-foods-panel" class="hidden mb-5">
-  <div class="flex justify-end mb-3">
-    <button id="open-cf-modal" type="button"
-            class="flex items-center gap-1.5 text-sm font-semibold text-white rounded-xl px-4 py-2 transition-all"
-            style="background: linear-gradient(135deg, #1d4ed8, #3b82f6); box-shadow: 0 4px 14px rgba(59,130,246,0.3);">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
-           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-      Add Custom Food
-    </button>
-  </div>
-  <!-- Saved custom foods list -->
   <div id="my-foods-list" class="space-y-2"></div>
 </div>
 
