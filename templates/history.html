@@ -4,9 +4,20 @@
 
 {% block content %}
 
-<div class="mb-5">
-  <h1 class="text-2xl font-bold text-slate-100">Past 7 Days</h1>
+<div class="mb-4">
+  <h1 class="text-2xl font-bold text-slate-100">History</h1>
   <p class="text-sm text-slate-500 mt-1">Your daily nutrition summary.</p>
+</div>
+
+<!-- Period selector -->
+<div class="flex gap-2 mb-5 flex-wrap">
+  {% for label, val in [('7 Days', 7), ('30 Days', 30), ('90 Days', 90), ('1 Year', 365)] %}
+  <a href="/history?days={{ val }}"
+     class="px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all
+            {% if days == val %}border-blue-500 text-blue-300{% else %}border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-300{% endif %}">
+    {{ label }}
+  </a>
+  {% endfor %}
 </div>
 
 {% if history %}
@@ -80,7 +91,7 @@
 
 <div class="mt-6 rounded-2xl p-5 shadow-2xl"
      style="background: linear-gradient(135deg, #0c1f48, #1a3a7a); border: 1px solid rgba(59,130,246,0.25);">
-  <h3 class="text-xs font-semibold text-blue-300 uppercase tracking-widest mb-3">{{ history | length }}-Day Average</h3>
+  <h3 class="text-xs font-semibold text-blue-300 uppercase tracking-widest mb-3">{{ history | length }}-Day Average (of {{ days }}-Day Period)</h3>
   <div class="grid grid-cols-2 gap-3 text-sm">
     <div>
       <p class="text-blue-200/60 text-xs">Avg Calories</p>

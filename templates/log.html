@@ -104,6 +104,76 @@
   <div id="ocr-result-output" class="space-y-2"></div>
 </div>
 
+<!-- My Foods toggle -->
+<div class="mb-4">
+  <button id="toggle-my-foods" type="button"
+          class="flex items-center gap-2 text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+    <svg xmlns="http://www.w3.org/2000/svg" id="my-foods-chevron" class="w-4 h-4 transition-transform" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+    My Foods
+    <span id="my-foods-count" class="text-xs font-normal text-slate-500"></span>
+  </button>
+</div>
+
+<!-- My Foods panel -->
+<div id="my-foods-panel" class="hidden mb-5">
+  <!-- Create new food form -->
+  <div class="card rounded-2xl p-5 mb-3">
+    <h3 class="text-sm font-semibold text-slate-100 mb-4">Create Custom Food</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Food Name</label>
+        <input id="cf-name" type="text" placeholder="e.g. Homemade protein shake"
+               class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Calories / 100g</label>
+          <input id="cf-kcal" type="number" min="0" step="0.1" placeholder="kcal"
+                 class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Protein / 100g (g)</label>
+          <input id="cf-protein" type="number" min="0" step="0.1" placeholder="g"
+                 class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Carbs / 100g (g)</label>
+          <input id="cf-carbs" type="number" min="0" step="0.1" placeholder="g"
+                 class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1.5">Fat / 100g (g)</label>
+          <input id="cf-fat" type="number" min="0" step="0.1" placeholder="g"
+                 class="input-dark w-full rounded-xl px-3 py-2.5 text-sm" />
+        </div>
+      </div>
+      <!-- Optional serving size -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5">
+          Serving size <span class="font-normal text-slate-600">(optional — adds a unit option like "1 cup")</span>
+        </label>
+        <div class="flex gap-2">
+          <input id="cf-unit-label" type="text" placeholder="e.g. cup, slice, bowl"
+                 class="input-dark flex-1 rounded-xl px-3 py-2.5 text-sm" />
+          <input id="cf-grams-per-unit" type="number" min="1" step="0.1" placeholder="grams"
+                 class="input-dark w-24 rounded-xl px-3 py-2.5 text-sm" />
+        </div>
+      </div>
+      <button id="save-custom-food-btn"
+              class="w-full text-white font-semibold rounded-xl py-3 text-sm transition-all"
+              style="background: linear-gradient(135deg, #1d4ed8, #3b82f6);">
+        Save Custom Food
+      </button>
+    </div>
+  </div>
+
+  <!-- Saved custom foods list -->
+  <div id="my-foods-list" class="space-y-2"></div>
+</div>
+
 <!-- Search results -->
 <div id="search-results" class="space-y-2 mb-5"></div>
 

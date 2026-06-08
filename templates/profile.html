@@ -217,42 +217,27 @@
   </div>
 
   <div class="px-5 py-4">
-    <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Weight History</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-widest">Weight History</h2>
+      <!-- Range selector -->
+      <div class="flex gap-1" id="chart-range-btns">
+        <button data-days="30"  class="chart-range-btn px-2 py-0.5 rounded text-xs font-semibold transition-all border border-blue-500 text-blue-300">1M</button>
+        <button data-days="90"  class="chart-range-btn px-2 py-0.5 rounded text-xs font-semibold transition-all border border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-300">3M</button>
+        <button data-days="180" class="chart-range-btn px-2 py-0.5 rounded text-xs font-semibold transition-all border border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-300">6M</button>
+        <button data-days="365" class="chart-range-btn px-2 py-0.5 rounded text-xs font-semibold transition-all border border-slate-700 text-slate-500 hover:border-blue-500 hover:text-blue-300">1Y</button>
+      </div>
+    </div>
 
-    {% if weight_history %}
-    {% set min_w = weight_history | map(attribute='weight_kg') | min %}
-    {% set max_w = weight_history | map(attribute='weight_kg') | max %}
-    {% set w_range = max_w - min_w if max_w != min_w else 1 %}
+    <!-- SVG weight chart — rendered by JS -->
+    <div id="weight-chart-wrap">
+      <svg id="weight-chart" width="100%" viewBox="0 0 320 160" preserveAspectRatio="xMidYMid meet"
+           style="overflow:visible"></svg>
+    </div>
 
-    <ul class="space-y-2" id="weight-history-list">
-      {% for entry in weight_history[:10] %}
-      {% set bar_pct = ((entry.weight_kg - min_w) / w_range * 60 + 30) | round(1) %}
-      <li class="flex items-center gap-3">
-        <div class="w-16 text-right flex-shrink-0">
-          <p class="text-xs text-slate-500">{{ entry.date }}</p>
-        </div>
-        <div class="flex-1">
-          <div class="relative h-6 flex items-center">
-            <div class="h-4 rounded-full"
-                 style="width: {{ bar_pct }}%; background: rgba(59,130,246,0.25);"></div>
-            <span class="absolute left-2 text-xs font-semibold text-blue-400">
-              {{ entry.weight_kg }}kg
-            </span>
-          </div>
-          {% if entry.note %}
-          <p class="text-xs text-slate-500 mt-0.5">{{ entry.note }}</p>
-          {% endif %}
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-
-    {% else %}
-    <div class="text-center py-6" id="weight-empty-state">
+    <div class="text-center py-6 hidden" id="weight-empty-state">
       <p class="text-3xl mb-2">⚖️</p>
       <p class="text-slate-500 text-sm">No weight entries yet. Log your first one above.</p>
     </div>
-    {% endif %}
   </div>
 </div>
 

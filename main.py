@@ -75,13 +75,13 @@ async def log_page(request: Request):
 
 
 @app.get("/history", response_class=HTMLResponse)
-async def history_page(request: Request):
-    history = await database.get_history(7)
+async def history_page(request: Request, days: int = 7):
+    history = await database.get_history(days)
     goals   = await database.get_goals()
     return templates.TemplateResponse(
         request,
         "history.html",
-        {"history": history, "goals": goals},
+        {"history": history, "goals": goals, "days": days},
     )
 
 
@@ -193,9 +193,27 @@ async def search_food(q: Optional[str] = None):
             if attempt == 1:
                 pass  # Use local results only
 
-    # Combine: local results first, then API results
-    combined = local_results + api_results
-    return JSONResponse({"results": combined[:15]})
+    # Custom foods first (exact match prioritised, always shown)
+    custom_raw = await database.search_custom_foods(q)
+    custom_results = [
+        {
+            "name":       cf["name"],
+            "kcal":       cf["calories_per_100g"],
+            "protein":    cf["protein_per_100g"],
+            "carbs":      cf["carbs_per_100g"],
+            "fat":        cf["fat_per_100g"],
+            "unit":       cf["unit"],
+            "unit_label": cf["unit_label"],
+            "grams_per_unit": cf["grams_per_unit"],
+            "custom":     True,
+            "custom_id":  cf["id"],
+        }
+        for cf in custom_raw
+    ]
+
+    # Combine: custom first, then local, then API
+    combined = custom_results + local_results + api_results
+    return JSONResponse({"results": combined[:20]})
 
 
 
@@ -401,3 +419,47 @@ async def weight_history_api(days: int = 30):
 async def week_status_api():
     status = await database.get_week_status()
     return JSONResponse({"week": status})
+
+
+# ── Custom foods API ──────────────────────────────────────────────────────────
+
+class CustomFoodRequest(BaseModel):
+    name:              str
+    calories_per_100g: float
+    protein_per_100g:  float
+    carbs_per_100g:    float
+    fat_per_100g:      float
+    unit:              str           = "g"
+    unit_label:        str           = "grams"
+    grams_per_unit:    Optional[float] = None
+
+
+@app.get("/api/custom-foods")
+async def list_custom_foods():
+    foods = await database.get_custom_foods()
+    return JSONResponse({"foods": foods})
+
+
+@app.post("/api/custom-foods", status_code=201)
+async def create_custom_food(body: CustomFoodRequest):
+    if not body.name.strip():
+        raise HTTPException(status_code=422, detail="name is required")
+    food_id = await database.insert_custom_food(
+        body.name.strip(),
+        body.calories_per_100g,
+        body.protein_per_100g,
+        body.carbs_per_100g,
+        body.fat_per_100g,
+        body.unit,
+        body.unit_label,
+        body.grams_per_unit,
+    )
+    return {"id": food_id}
+
+
+@app.delete("/api/custom-foods/{food_id}")
+async def delete_custom_food_api(food_id: int):
+    deleted = await database.delete_custom_food(food_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Custom food not found")
+    return {"deleted": True}

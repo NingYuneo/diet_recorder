@@ -189,8 +189,13 @@ function escHtml(str) {
         'transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500/50',
       ].join(' ');
       card.style.cssText = 'background:#0d1829; border:1px solid rgba(255,255,255,0.07);';
+      var customBadge = food.custom
+        ? '<span class="ml-1 text-[0.6rem] font-bold px-1.5 py-0.5 rounded-full" style="background:rgba(59,130,246,0.2);color:#60a5fa">★ My Food</span>'
+        : '';
       card.innerHTML =
+        '<div class="flex items-center gap-1">' +
         '<p class="font-medium text-slate-200 text-sm leading-snug">' + escHtml(food.name) + '</p>' +
+        customBadge + '</div>' +
         '<div class="flex gap-3 mt-1.5 text-xs text-slate-500 flex-wrap">' +
         '<span class="text-blue-400 font-semibold">' + food.kcal + ' kcal</span>' +
         '<span>P: ' + food.protein + 'g</span>' +
@@ -286,6 +291,7 @@ function escHtml(str) {
   function showSpinner(show) { searchSpinner.classList.toggle('hidden', !show); }
 
   // ── Food selection ─────────────────────────────────────────
+  window._selectFood = selectFood;
   function selectFood(food) {
     selectedFood = food;
     selectedFoodName.textContent = food.name;
@@ -825,6 +831,352 @@ function escHtml(str) {
     var i = parseInt(v, 10);
     return isNaN(i) ? null : i;
   }
+})();
+
+
+// ── Weight chart (profile page) ──────────────────────────────────────────────
+(function initWeightChart() {
+  var svg         = document.getElementById('weight-chart');
+  var emptyState  = document.getElementById('weight-empty-state');
+  var rangeBtns   = document.querySelectorAll('.chart-range-btn');
+  if (!svg) return;
+
+  var activeDays = 30;
+
+  rangeBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      rangeBtns.forEach(function (b) {
+        b.classList.remove('border-blue-500', 'text-blue-300');
+        b.classList.add('border-slate-700', 'text-slate-500');
+      });
+      btn.classList.add('border-blue-500', 'text-blue-300');
+      btn.classList.remove('border-slate-700', 'text-slate-500');
+      activeDays = parseInt(btn.dataset.days, 10);
+      loadChart(activeDays);
+    });
+  });
+
+  async function loadChart(days) {
+    try {
+      var res  = await fetch('/api/weight/history?days=' + days);
+      var data = await res.json();
+      var entries = (data.history || []).slice().reverse(); // oldest first
+      renderChart(entries);
+    } catch (e) {}
+  }
+
+  function renderChart(entries) {
+    svg.innerHTML = '';
+    if (entries.length === 0) {
+      if (emptyState) emptyState.classList.remove('hidden');
+      return;
+    }
+    if (emptyState) emptyState.classList.add('hidden');
+
+    var W = 320, H = 160;
+    var pad = { top: 18, right: 16, bottom: 36, left: 44 };
+    var cw = W - pad.left - pad.right;
+    var ch = H - pad.top - pad.bottom;
+
+    var weights = entries.map(function (e) { return e.weight_kg; });
+    var minW = Math.min.apply(null, weights);
+    var maxW = Math.max.apply(null, weights);
+    var wRange = maxW - minW < 1 ? 2 : maxW - minW;
+    var wPad   = wRange * 0.15;
+    var yMin   = minW - wPad;
+    var yMax   = maxW + wPad;
+
+    function xPos(i) {
+      return pad.left + (entries.length < 2 ? cw / 2 : (i / (entries.length - 1)) * cw);
+    }
+    function yPos(w) {
+      return pad.top + ch - ((w - yMin) / (yMax - yMin)) * ch;
+    }
+
+    var ns = 'http://www.w3.org/2000/svg';
+
+    // Gradient definition
+    var defs = document.createElementNS(ns, 'defs');
+    var grad = document.createElementNS(ns, 'linearGradient');
+    grad.setAttribute('id', 'wg');
+    grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+    grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+    var s1 = document.createElementNS(ns, 'stop');
+    s1.setAttribute('offset', '0%');
+    s1.setAttribute('stop-color', '#3b82f6');
+    s1.setAttribute('stop-opacity', '0.25');
+    var s2 = document.createElementNS(ns, 'stop');
+    s2.setAttribute('offset', '100%');
+    s2.setAttribute('stop-color', '#3b82f6');
+    s2.setAttribute('stop-opacity', '0');
+    grad.appendChild(s1); grad.appendChild(s2);
+    defs.appendChild(grad);
+    svg.appendChild(defs);
+
+    // Y-axis grid lines and labels
+    var yTicks = 4;
+    for (var t = 0; t <= yTicks; t++) {
+      var wVal = yMin + (yMax - yMin) * (t / yTicks);
+      var y    = yPos(wVal);
+      var gridLine = document.createElementNS(ns, 'line');
+      gridLine.setAttribute('x1', pad.left); gridLine.setAttribute('x2', W - pad.right);
+      gridLine.setAttribute('y1', y);        gridLine.setAttribute('y2', y);
+      gridLine.setAttribute('stroke', 'rgba(255,255,255,0.05)');
+      gridLine.setAttribute('stroke-width', '1');
+      svg.appendChild(gridLine);
+      var label = document.createElementNS(ns, 'text');
+      label.setAttribute('x', pad.left - 4);
+      label.setAttribute('y', y + 3);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('font-size', '8');
+      label.setAttribute('fill', '#475569');
+      label.textContent = wVal.toFixed(1);
+      svg.appendChild(label);
+    }
+
+    // X-axis date labels
+    var maxXLabels = Math.min(entries.length, 5);
+    var step = Math.max(1, Math.floor((entries.length - 1) / (maxXLabels - 1)));
+    for (var i = 0; i < entries.length; i += step) {
+      var d = new Date(entries[i].date + 'T00:00:00');
+      var lbl = (d.getMonth() + 1) + '/' + d.getDate();
+      var xLabel = document.createElementNS(ns, 'text');
+      xLabel.setAttribute('x', xPos(i));
+      xLabel.setAttribute('y', H - pad.bottom + 13);
+      xLabel.setAttribute('text-anchor', 'middle');
+      xLabel.setAttribute('font-size', '8');
+      xLabel.setAttribute('fill', '#475569');
+      xLabel.textContent = lbl;
+      svg.appendChild(xLabel);
+    }
+
+    if (entries.length < 2) {
+      // Single dot
+      var dot = document.createElementNS(ns, 'circle');
+      dot.setAttribute('cx', xPos(0)); dot.setAttribute('cy', yPos(entries[0].weight_kg));
+      dot.setAttribute('r', '4');
+      dot.setAttribute('fill', '#3b82f6');
+      svg.appendChild(dot);
+      return;
+    }
+
+    // Build points array
+    var pts = entries.map(function (e, i) {
+      return { x: xPos(i), y: yPos(e.weight_kg) };
+    });
+
+    // Catmull-Rom smooth path
+    function smoothPath(p) {
+      var d = 'M ' + p[0].x + ' ' + p[0].y;
+      for (var i = 0; i < p.length - 1; i++) {
+        var p0 = p[Math.max(0, i - 1)];
+        var p1 = p[i];
+        var p2 = p[i + 1];
+        var p3 = p[Math.min(p.length - 1, i + 2)];
+        var cp1x = p1.x + (p2.x - p0.x) / 6;
+        var cp1y = p1.y + (p2.y - p0.y) / 6;
+        var cp2x = p2.x - (p3.x - p1.x) / 6;
+        var cp2y = p2.y - (p3.y - p1.y) / 6;
+        d += ' C ' + cp1x + ' ' + cp1y + ' ' + cp2x + ' ' + cp2y + ' ' + p2.x + ' ' + p2.y;
+      }
+      return d;
+    }
+
+    var pathD = smoothPath(pts);
+    var bottomY = pad.top + ch;
+
+    // Fill area under curve
+    var fill = document.createElementNS(ns, 'path');
+    fill.setAttribute('d', pathD + ' L ' + pts[pts.length-1].x + ' ' + bottomY + ' L ' + pts[0].x + ' ' + bottomY + ' Z');
+    fill.setAttribute('fill', 'url(#wg)');
+    svg.appendChild(fill);
+
+    // Curve line
+    var line = document.createElementNS(ns, 'path');
+    line.setAttribute('d', pathD);
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', '#3b82f6');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('style', 'filter:drop-shadow(0 0 4px rgba(59,130,246,0.6))');
+    svg.appendChild(line);
+
+    // Data points
+    pts.forEach(function (p, i) {
+      var c = document.createElementNS(ns, 'circle');
+      c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+      c.setAttribute('r', entries.length > 30 ? '2' : '3');
+      c.setAttribute('fill', '#3b82f6');
+      c.setAttribute('stroke', '#060d1b');
+      c.setAttribute('stroke-width', '1.5');
+      svg.appendChild(c);
+    });
+  }
+
+  loadChart(activeDays);
+})();
+
+
+// ── Custom foods (log page) ───────────────────────────────────────────────────
+(function initCustomFoods() {
+  var toggleBtn    = document.getElementById('toggle-my-foods');
+  if (!toggleBtn) return;
+
+  var panel        = document.getElementById('my-foods-panel');
+  var chevron      = document.getElementById('my-foods-chevron');
+  var countBadge   = document.getElementById('my-foods-count');
+  var myFoodsList  = document.getElementById('my-foods-list');
+  var saveBtn      = document.getElementById('save-custom-food-btn');
+  var cfName       = document.getElementById('cf-name');
+  var cfKcal       = document.getElementById('cf-kcal');
+  var cfProtein    = document.getElementById('cf-protein');
+  var cfCarbs      = document.getElementById('cf-carbs');
+  var cfFat        = document.getElementById('cf-fat');
+  var cfUnitLabel  = document.getElementById('cf-unit-label');
+  var cfGramsUnit  = document.getElementById('cf-grams-per-unit');
+
+  var customFoods  = [];
+  var panelOpen    = false;
+
+  async function loadCustomFoods() {
+    try {
+      var res  = await fetch('/api/custom-foods');
+      var data = await res.json();
+      customFoods = data.foods || [];
+      renderMyFoodsList();
+      if (countBadge) {
+        countBadge.textContent = customFoods.length ? '(' + customFoods.length + ')' : '';
+      }
+    } catch (e) {}
+  }
+
+  function renderMyFoodsList() {
+    if (!myFoodsList) return;
+    myFoodsList.innerHTML = '';
+    if (customFoods.length === 0) {
+      myFoodsList.innerHTML = '<p class="text-slate-500 text-xs text-center py-2">No custom foods yet.</p>';
+      return;
+    }
+    customFoods.forEach(function (food) {
+      var card = document.createElement('div');
+      card.className = 'flex items-start justify-between gap-3 rounded-xl px-4 py-3';
+      card.style.cssText = 'background:#0d1829; border:1px solid rgba(255,255,255,0.07)';
+      card.innerHTML =
+        '<button type="button" class="flex-1 text-left" data-cf-id="' + food.id + '">' +
+          '<p class="font-medium text-slate-200 text-sm">' + escHtml(food.name) + '</p>' +
+          '<div class="flex gap-3 mt-1 text-xs text-slate-500">' +
+            '<span class="text-blue-400 font-semibold">' + food.calories_per_100g + ' kcal</span>' +
+            '<span>P: ' + food.protein_per_100g + 'g</span>' +
+            '<span>C: ' + food.carbs_per_100g + 'g</span>' +
+            '<span>F: ' + food.fat_per_100g + 'g</span>' +
+            '<span class="text-slate-600">per 100g</span>' +
+          '</div>' +
+        '</button>' +
+        '<button type="button" class="flex-shrink-0 p-1.5 text-slate-600 hover:text-rose-400 transition-colors rounded" data-delete-cf="' + food.id + '" aria-label="Delete">' +
+          '<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>' +
+          '</svg>' +
+        '</button>';
+      myFoodsList.appendChild(card);
+    });
+
+    // Select food to log
+    myFoodsList.querySelectorAll('[data-cf-id]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var food = customFoods.find(function (f) { return f.id === parseInt(btn.dataset.cfId, 10); });
+        if (food && window._selectFood) {
+          window._selectFood({
+            name:           food.name,
+            kcal:           food.calories_per_100g,
+            protein:        food.protein_per_100g,
+            carbs:          food.carbs_per_100g,
+            fat:            food.fat_per_100g,
+            unit:           food.unit,
+            unit_label:     food.unit_label,
+            grams_per_unit: food.grams_per_unit,
+            custom:         true,
+            custom_id:      food.id,
+          });
+          // Close panel after selecting
+          panel.classList.add('hidden');
+          chevron.style.transform = '';
+          panelOpen = false;
+        }
+      });
+    });
+
+    // Delete food
+    myFoodsList.querySelectorAll('[data-delete-cf]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var id = parseInt(btn.dataset.deleteCf, 10);
+        if (!confirm('Delete this custom food?')) return;
+        try {
+          var res = await fetch('/api/custom-foods/' + id, { method: 'DELETE' });
+          if (res.ok) {
+            showToast('Custom food deleted.');
+            await loadCustomFoods();
+          }
+        } catch (e) {
+          showToast('❌ Could not delete.', true);
+        }
+      });
+    });
+  }
+
+  // Toggle panel
+  toggleBtn.addEventListener('click', function () {
+    panelOpen = !panelOpen;
+    panel.classList.toggle('hidden', !panelOpen);
+    chevron.style.transform = panelOpen ? 'rotate(180deg)' : '';
+  });
+
+  // Save new custom food
+  if (saveBtn) {
+    saveBtn.addEventListener('click', async function () {
+      var name    = cfName.value.trim();
+      var kcal    = parseFloat(cfKcal.value);
+      var protein = parseFloat(cfProtein.value);
+      var carbs   = parseFloat(cfCarbs.value);
+      var fat     = parseFloat(cfFat.value);
+
+      if (!name) { cfName.focus(); showToast('Enter a food name.', true); return; }
+      if ([kcal, protein, carbs, fat].some(isNaN)) { showToast('Fill in all macro fields.', true); return; }
+
+      var unitLabel     = cfUnitLabel.value.trim() || 'grams';
+      var gramsPerUnit  = parseFloat(cfGramsUnit.value) || null;
+      var unit          = gramsPerUnit ? 'unit' : 'g';
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        var res = await fetch('/api/custom-foods', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({
+            name, calories_per_100g: kcal, protein_per_100g: protein,
+            carbs_per_100g: carbs, fat_per_100g: fat,
+            unit, unit_label: unitLabel, grams_per_unit: gramsPerUnit,
+          }),
+        });
+        if (res.ok) {
+          showToast('✅ Custom food saved!');
+          cfName.value = ''; cfKcal.value = ''; cfProtein.value = '';
+          cfCarbs.value = ''; cfFat.value = ''; cfUnitLabel.value = ''; cfGramsUnit.value = '';
+          await loadCustomFoods();
+        } else {
+          showToast('❌ Could not save.', true);
+        }
+      } catch (e) {
+        showToast('❌ Network error.', true);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Custom Food';
+      }
+    });
+  }
+
+  loadCustomFoods();
 })();
 
 

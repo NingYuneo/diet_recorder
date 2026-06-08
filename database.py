@@ -96,6 +96,22 @@ async def init_db():
             )
         """)
 
+        # ── custom_foods ──────────────────────────────────────────
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS custom_foods (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                name              TEXT    NOT NULL,
+                calories_per_100g REAL    NOT NULL DEFAULT 0,
+                protein_per_100g  REAL    NOT NULL DEFAULT 0,
+                carbs_per_100g    REAL    NOT NULL DEFAULT 0,
+                fat_per_100g      REAL    NOT NULL DEFAULT 0,
+                unit              TEXT    NOT NULL DEFAULT 'g',
+                unit_label        TEXT    NOT NULL DEFAULT 'grams',
+                grams_per_unit    REAL,
+                created_at        TEXT    DEFAULT (datetime('now'))
+            )
+        """)
+
         await db.commit()
 
 
@@ -368,3 +384,58 @@ async def get_week_status() -> list[dict]:
         })
 
     return result
+
+
+# ── Custom foods ──────────────────────────────────────────────────────────────
+
+async def get_custom_foods() -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM custom_foods ORDER BY name ASC"
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+async def search_custom_foods(query: str) -> list[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            "SELECT * FROM custom_foods WHERE name LIKE ? ORDER BY name ASC LIMIT 10",
+            (f"%{query}%",),
+        )
+        rows = await cursor.fetchall()
+        return [dict(r) for r in rows]
+
+
+async def insert_custom_food(
+    name: str,
+    calories_per_100g: float,
+    protein_per_100g: float,
+    carbs_per_100g: float,
+    fat_per_100g: float,
+    unit: str = "g",
+    unit_label: str = "grams",
+    grams_per_unit: float | None = None,
+) -> int:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            """INSERT INTO custom_foods
+               (name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g,
+                unit, unit_label, grams_per_unit)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (name, calories_per_100g, protein_per_100g, carbs_per_100g, fat_per_100g,
+             unit, unit_label, grams_per_unit),
+        )
+        await db.commit()
+        return cursor.lastrowid
+
+
+async def delete_custom_food(food_id: int) -> bool:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cursor = await db.execute(
+            "DELETE FROM custom_foods WHERE id = ?", (food_id,)
+        )
+        await db.commit()
+        return cursor.rowcount > 0
