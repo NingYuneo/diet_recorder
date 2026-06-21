@@ -3,6 +3,7 @@ from typing import Optional
 import io
 import re
 
+import os
 import httpx
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -11,6 +12,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 import database
+
+USDA_API_KEY = os.environ.get("USDA_API_KEY", "")
 
 try:
     from PIL import Image
@@ -139,79 +142,117 @@ def _fallback_search(q: str):
 
 # ── API routes ────────────────────────────────────────────────────────────────
 
+async def _search_usda(q: str) -> list[dict]:
+    if not USDA_API_KEY:
+        return []
+    url = (
+        "https://api.nal.usda.gov/fdc/v1/foods/search"
+        f"?query={q}&dataType=Foundation%2CSR%20Legacy%2CBranded&pageSize=15"
+        f"&api_key={USDA_API_KEY}"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return []
+
+    results = []
+    for food in data.get("foods", []):
+        name = (food.get("description") or "").strip()
+        if not name:
+            continue
+        nutrients = {n["nutrientName"]: n.get("value", 0) for n in food.get("foodNutrients", [])}
+        kcal    = nutrients.get("Energy", 0)
+        protein = nutrients.get("Protein", 0)
+        carbs   = nutrients.get("Carbohydrate, by difference", 0)
+        fat     = nutrients.get("Total lipid (fat)", 0)
+        if kcal == 0 and protein == 0 and carbs == 0 and fat == 0:
+            continue
+        results.append({
+            "name":    name,
+            "kcal":    round(float(kcal or 0), 1),
+            "protein": round(float(protein or 0), 1),
+            "carbs":   round(float(carbs or 0), 1),
+            "fat":     round(float(fat or 0), 1),
+        })
+        if len(results) == 15:
+            break
+    return results
+
+
+async def _search_openfoodfacts(q: str) -> list[dict]:
+    url = (
+        "https://world.openfoodfacts.org/cgi/search.pl"
+        f"?search_terms={q}&search_simple=1&action=process"
+        "&json=1&fields=product_name,nutriments&page_size=20"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+    except Exception:
+        return []
+
+    results = []
+    for product in data.get("products", []):
+        name = (product.get("product_name") or "").strip()
+        if not name:
+            continue
+        n       = product.get("nutriments", {})
+        kcal    = n.get("energy-kcal_100g") or n.get("energy_100g", 0)
+        protein = n.get("proteins_100g", 0)
+        carbs   = n.get("carbohydrates_100g", 0)
+        fat     = n.get("fat_100g", 0)
+        if kcal == 0 and protein == 0 and carbs == 0 and fat == 0:
+            continue
+        results.append({
+            "name":    name,
+            "kcal":    round(float(kcal or 0), 1),
+            "protein": round(float(protein or 0), 1),
+            "carbs":   round(float(carbs or 0), 1),
+            "fat":     round(float(fat or 0), 1),
+        })
+        if len(results) == 10:
+            break
+    return results
+
+
 @app.get("/api/search")
 async def search_food(q: Optional[str] = None):
     if not q or len(q.strip()) < 2:
         return JSONResponse({"results": []})
 
     q_lower = q.lower()
-    
-    # Start with local fallback list
-    local_results = [f for f in _COMMON_FOODS if q_lower in f["name"].lower()]
 
-    url = (
-        "https://world.openfoodfacts.org/cgi/search.pl"
-        f"?search_terms={q}&search_simple=1&action=process"
-        "&json=1&fields=product_name,nutriments&page_size=20"
-    )
-
-    api_results = []
-    for attempt in range(2):
-        try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
-                data = resp.json()
-            
-            for product in data.get("products", []):
-                name = (product.get("product_name") or "").strip()
-                if not name:
-                    continue
-                n       = product.get("nutriments", {})
-                kcal    = n.get("energy-kcal_100g") or n.get("energy_100g", 0)
-                protein = n.get("proteins_100g", 0)
-                carbs   = n.get("carbohydrates_100g", 0)
-                fat     = n.get("fat_100g", 0)
-
-                if kcal == 0 and protein == 0 and carbs == 0 and fat == 0:
-                    continue
-
-                api_results.append(
-                    {
-                        "name":    name,
-                        "kcal":    round(float(kcal or 0), 1),
-                        "protein": round(float(protein or 0), 1),
-                        "carbs":   round(float(carbs or 0), 1),
-                        "fat":     round(float(fat or 0), 1),
-                    }
-                )
-
-                if len(api_results) == 10:
-                    break
-            break
-        except Exception:
-            if attempt == 1:
-                pass  # Use local results only
-
-    # Custom foods first (exact match prioritised, always shown)
+    # Custom foods always shown first
     custom_raw = await database.search_custom_foods(q)
     custom_results = [
         {
-            "name":       cf["name"],
-            "kcal":       cf["calories_per_100g"],
-            "protein":    cf["protein_per_100g"],
-            "carbs":      cf["carbs_per_100g"],
-            "fat":        cf["fat_per_100g"],
-            "unit":       cf["unit"],
-            "unit_label": cf["unit_label"],
+            "name":           cf["name"],
+            "kcal":           cf["calories_per_100g"],
+            "protein":        cf["protein_per_100g"],
+            "carbs":          cf["carbs_per_100g"],
+            "fat":            cf["fat_per_100g"],
+            "unit":           cf["unit"],
+            "unit_label":     cf["unit_label"],
             "grams_per_unit": cf["grams_per_unit"],
-            "custom":     True,
-            "custom_id":  cf["id"],
+            "custom":         True,
+            "custom_id":      cf["id"],
         }
         for cf in custom_raw
     ]
 
-    # Combine: custom first, then local, then API
+    # Local fallback list
+    local_results = [f for f in _COMMON_FOODS if q_lower in f["name"].lower()]
+
+    # USDA primary, Open Food Facts secondary
+    api_results = await _search_usda(q)
+    if not api_results:
+        api_results = await _search_openfoodfacts(q)
+
     combined = custom_results + local_results + api_results
     return JSONResponse({"results": combined[:20]})
 
