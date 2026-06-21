@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
-aiosqlite
+asyncpg
 httpx
 jinja2
 python-multipart
