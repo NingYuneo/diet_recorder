@@ -27,6 +27,11 @@ except ImportError:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    if not database.DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is not set. "
+            "Add it in Render → your service → Environment."
+        )
     await database.init_db()
     yield
 
