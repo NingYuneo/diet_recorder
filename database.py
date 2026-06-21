@@ -25,7 +25,18 @@ _pool: asyncpg.Pool | None = None
 async def get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(DATABASE_URL, ssl="require", min_size=1, max_size=5)
+        from urllib.parse import urlparse, unquote
+        u = urlparse(DATABASE_URL)
+        _pool = await asyncpg.create_pool(
+            host=u.hostname,
+            port=u.port or 5432,
+            user=unquote(u.username),
+            password=unquote(u.password),
+            database=u.path.lstrip("/"),
+            ssl="require",
+            min_size=1,
+            max_size=5,
+        )
     return _pool
 
 
